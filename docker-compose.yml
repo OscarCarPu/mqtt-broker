@@ -17,8 +17,10 @@ services:
   mosquitto-ui:
     image: smeagolworms4/mqtt-explorer
     container_name: mosquitto-ui
-    ports: 
+    ports:
       - "4000:4000"
+    volumes:
+      - ./mqtt-explorer/config:/mqtt-explorer/config
     restart: unless-stopped
     depends_on:
       - mosquitto
