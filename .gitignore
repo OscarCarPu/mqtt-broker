@@ -5,8 +5,9 @@ mosquitto/log/*
 .env
 
 # Runtime state owned by the services, not by git.
-# passwd holds password hashes (see make create-password); the web UI rewrites
-# settings.json on every change and it would otherwise carry the broker
+# secrets/passwd holds the password hashes (see make create-password); the web UI
+# rewrites settings.json on every change and it would otherwise carry the broker
 # password in plain text.
+mosquitto/secrets/
 mosquitto/config/passwd
 mqtt-explorer/config/settings.json

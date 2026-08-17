@@ -3,11 +3,21 @@ services:
     image: eclipse-mosquitto:2.0 
     container_name: mosquitto
     hostname: mosquitto
+    # The default command points at /mosquitto/config/mosquitto.conf, which is
+    # no longer where the config lives.
+    command: ["/usr/sbin/mosquitto", "-c", "/etc/mosquitto/mosquitto.conf"]
     ports:
       - "1883:1883"
       - "9001:9001"
     volumes:
-      - ./mosquitto/config:/mosquitto/config
+      # The image entrypoint runs `chown -R mosquitto:mosquitto /mosquitto` on
+      # every start, which takes any repo file under that path away from the
+      # host user and breaks git. The tracked config is therefore mounted
+      # outside /mosquitto, and read-only since the broker never writes it.
+      - ./mosquitto/config:/etc/mosquitto:ro
+      # Runtime state, gitignored, left inside /mosquitto so the entrypoint's
+      # chown keeps it owned by the broker.
+      - ./mosquitto/secrets:/mosquitto/secrets
       - ./mosquitto/data:/mosquitto/data
       - ./mosquitto/log:/mosquitto/log
     restart: unless-stopped

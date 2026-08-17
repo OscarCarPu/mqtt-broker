@@ -2,7 +2,10 @@
 
 up: # start the broker and UI in the background
 	@test -f .env || echo "warning: no .env found, copy .env.example and fill it in"
-	@test -f mosquitto/config/passwd || touch mosquitto/config/passwd
+	@# The broker refuses to start without password_file, and compose would
+	@# create a missing bind-mount directory as root.
+	@mkdir -p mosquitto/secrets
+	@test -f mosquitto/secrets/passwd || { touch mosquitto/secrets/passwd; chmod 600 mosquitto/secrets/passwd; }
 	@docker compose up -d
 
 down: # stop and remove the containers
@@ -24,7 +27,7 @@ create-password: # create or update a user, usage: make create-password USER=use
 		echo "usage: make create-password USER=name PASS=secret"; \
 		exit 1; \
 	fi
-	@docker compose exec -T mosquitto mosquitto_passwd -b /mosquitto/config/passwd '$(USER)' '$(PASS)'
+	@docker compose exec -T mosquitto mosquitto_passwd -b /mosquitto/secrets/passwd '$(USER)' '$(PASS)'
 	@docker compose restart mosquitto
 	@echo "User $(USER) created. Add an entry for it in mosquitto/config/acl."
 
@@ -33,9 +36,9 @@ delete-password: # remove a user, usage: make delete-password USER=user
 		echo "usage: make delete-password USER=name"; \
 		exit 1; \
 	fi
-	@docker compose exec -T mosquitto mosquitto_passwd -D /mosquitto/config/passwd '$(USER)'
+	@docker compose exec -T mosquitto mosquitto_passwd -D /mosquitto/secrets/passwd '$(USER)'
 	@docker compose restart mosquitto
 	@echo "User $(USER) deleted. Remove its entry from mosquitto/config/acl too."
 
 list-users: # list the users defined in the password file
-	@cut -d: -f1 mosquitto/config/passwd
+	@docker compose exec -T mosquitto cut -d: -f1 /mosquitto/secrets/passwd

@@ -75,12 +75,18 @@ Note that `#` does not match `$SYS`, so broker stats need their own rule.
 - `mosquitto/config/acl` — per-user topic access rules
 - `.env` — web UI credentials, copied from `.env.example` (gitignored)
 
+`mosquitto/config/` is mounted read-only at `/etc/mosquitto`, deliberately
+outside `/mosquitto`: the image entrypoint runs
+`chown -R mosquitto:mosquitto /mosquitto` on every start, so config kept in there
+stops being owned by the host user and git can no longer check it out. Anything
+the broker must write stays under `/mosquitto`.
+
 ### Runtime state
 
 These are written by the services, not by git, and are gitignored. A fresh clone
 starts without them; `make up` creates an empty `passwd` and the UI seeds its own
 `settings.json`.
 
-- `mosquitto/config/passwd` — password hashes (managed via `make create-password`)
+- `mosquitto/secrets/passwd` — password hashes (managed via `make create-password`)
 - `mqtt-explorer/config/settings.json` — saved UI connections, rewritten by the UI
   on every change and containing the broker password in plain text
