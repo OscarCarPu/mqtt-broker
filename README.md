@@ -13,7 +13,7 @@ Everything runs via Docker Compose.
 
 The broker requires authentication (`allow_anonymous false`), persists messages
 to `mosquitto/data/`, and logs to `mosquitto/log/`. Access is governed by the
-ACL in `mosquitto/config/acl`.
+ACL in `mosquitto/config/acl`, loaded via `acl_file`.
 
 ## Requirements
 
@@ -22,11 +22,33 @@ ACL in `mosquitto/config/acl`.
 ## Getting started
 
 ```sh
-make up                                  # start the broker and UI
-make create-password USER=admin PASS=... # create the first user
+cp .env.example .env                       # then fill in MQTT_PASSWORD
+make up                                    # start the broker and UI
+make create-password USER=web-ui PASS=...  # same password as in .env
 ```
 
 Then open the UI at <http://localhost:4000>.
+
+Credentials are never committed. `.env` holds the password the web UI connects
+with, and compose feeds it to the UI through `INITIAL_CONFIG`, which seeds
+`mqtt-explorer/config/settings.json` on first start only — the UI owns that file
+afterwards. Both `.env` and the two files listed under
+[Runtime state](#runtime-state) are gitignored.
+
+## Users and access
+
+Every user needs a password (`make create-password`) **and** an entry in
+`mosquitto/config/acl`. A user missing from the ACL authenticates fine but is
+denied every topic, which looks like a silently broken client.
+
+| User             | Access                                                              |
+| ---------------- | ------------------------------------------------------------------- |
+| `esp32-watchdog` | write `watchdog/ping`                                               |
+| `lab-watchdog`   | read `watchdog/ping`, write `events/uptime/lab`, `events/uptime/watchdog` |
+| `web-ui`         | read `#` and `$SYS/#` (read-only view for the web UI)               |
+
+The first two serve [mutual-watchdog](https://github.com/OscarCarPu/mutual-watchdog).
+Note that `#` does not match `$SYS`, so broker stats need their own rule.
 
 ## Access
 
@@ -43,11 +65,22 @@ Then open the UI at <http://localhost:4000>.
 | `make restart`                              | Restart all services            |
 | `make logs`                                 | Follow the broker logs          |
 | `make ps`                                   | Show service status             |
-| `make create-password USER=user PASS=PASS`  | Create a new user               |
+| `make create-password USER=user PASS=pass`  | Create or update a user         |
+| `make delete-password USER=user`            | Remove a user                   |
+| `make list-users`                           | List users in the password file |
 
 ## Configuration
 
-- `mosquitto/config/mosquitto.conf` — broker settings (listeners, auth, persistence, logging, limits)
+- `mosquitto/config/mosquitto.conf` — broker settings (listeners, auth, ACL, persistence, logging, limits)
 - `mosquitto/config/acl` — per-user topic access rules
-- `mosquitto/config/passwd` — hashed credentials (managed via `make create-password`)
-- `mqtt-explorer/config/settings.json` — saved connections for the web UI
+- `.env` — web UI credentials, copied from `.env.example` (gitignored)
+
+### Runtime state
+
+These are written by the services, not by git, and are gitignored. A fresh clone
+starts without them; `make up` creates an empty `passwd` and the UI seeds its own
+`settings.json`.
+
+- `mosquitto/config/passwd` — password hashes (managed via `make create-password`)
+- `mqtt-explorer/config/settings.json` — saved UI connections, rewritten by the UI
+  on every change and containing the broker password in plain text

@@ -21,6 +21,18 @@ services:
       - "4000:4000"
     volumes:
       - ./mqtt-explorer/config:/mqtt-explorer/config
+    environment:
+      # Seeds config/settings.json on first start only - the UI owns that file
+      # afterwards, which is why it is gitignored. Values come from .env so the
+      # broker password never lands in the repository.
+      INITIAL_CONFIG: >-
+        {"connections":[{"configVersion":1,"type":"mqtt","id":"home-lab",
+        "name":"home lab","host":"${MQTT_HOST:-mosquitto}",
+        "port":${MQTT_PORT:-1883},"protocol":"mqtt","basePath":"",
+        "username":"${MQTT_USERNAME:-}","password":"${MQTT_PASSWORD:-}",
+        "encryption":false,"certValidation":false,
+        "clientId":"mqtt-explorer-home-lab",
+        "subscriptions":[{"topic":"#","qos":0}]}]}
     restart: unless-stopped
     depends_on:
       - mosquitto
