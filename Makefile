@@ -23,11 +23,13 @@ ps: # show the status of the services
 create-password: # create or update a user, usage: make create-password USER=user PASS=pass
 	@# USER comes from the environment on most shells, so require it explicitly
 	@# rather than silently creating a user named after whoever ran make.
+	@# The exec calls below read stdin unless it is redirected, which silently
+	@# eats the rest of any script that pipes these targets into a shell.
 	@if [ "$(origin USER)" != "command line" ] || [ -z "$(PASS)" ]; then \
 		echo "usage: make create-password USER=name PASS=secret"; \
 		exit 1; \
 	fi
-	@docker compose exec -T mosquitto mosquitto_passwd -b /mosquitto/secrets/passwd '$(USER)' '$(PASS)'
+	@docker compose exec -T mosquitto mosquitto_passwd -b /mosquitto/secrets/passwd '$(USER)' '$(PASS)' </dev/null
 	@docker compose restart mosquitto
 	@echo "User $(USER) created. Add an entry for it in mosquitto/config/acl."
 
@@ -36,9 +38,9 @@ delete-password: # remove a user, usage: make delete-password USER=user
 		echo "usage: make delete-password USER=name"; \
 		exit 1; \
 	fi
-	@docker compose exec -T mosquitto mosquitto_passwd -D /mosquitto/secrets/passwd '$(USER)'
+	@docker compose exec -T mosquitto mosquitto_passwd -D /mosquitto/secrets/passwd '$(USER)' </dev/null
 	@docker compose restart mosquitto
 	@echo "User $(USER) deleted. Remove its entry from mosquitto/config/acl too."
 
 list-users: # list the users defined in the password file
-	@docker compose exec -T mosquitto cut -d: -f1 /mosquitto/secrets/passwd
+	@docker compose exec -T mosquitto cut -d: -f1 /mosquitto/secrets/passwd </dev/null
