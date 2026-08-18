@@ -9,5 +9,4 @@ mosquitto/log/*
 # rewrites settings.json on every change and it would otherwise carry the broker
 # password in plain text.
 mosquitto/secrets/
-mosquitto/config/passwd
 mqtt-explorer/config/settings.json
