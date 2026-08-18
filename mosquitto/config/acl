@@ -2,7 +2,7 @@
 # -------------------
 # Enforced via acl_file in mosquitto.conf. A user without an entry below is
 # denied every topic, so add the user here before pointing a client at the
-# broker. Passwords live in mosquitto/config/passwd (see make create-password).
+# broker. Passwords live in mosquitto/secrets/passwd (see make create-password).
 
 # ESP32 watchdog - publishes its own heartbeat, nothing else.
 user esp32-watchdog
@@ -19,3 +19,12 @@ topic write events/uptime/watchdog
 user web-ui
 topic read #
 topic read $SYS/#
+
+# Central pipeline consumer
+user central-pipeline
+topic read #
+
+# Central pipeline simulator - dev only, fakes events
+user central-pipeline-sim
+topic write events/uptime/lab
+topic write events/uptime/watchdog

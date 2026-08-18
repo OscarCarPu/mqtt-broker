@@ -41,13 +41,18 @@ Every user needs a password (`make create-password`) **and** an entry in
 `mosquitto/config/acl`. A user missing from the ACL authenticates fine but is
 denied every topic, which looks like a silently broken client.
 
-| User             | Access                                                              |
-| ---------------- | ------------------------------------------------------------------- |
-| `esp32-watchdog` | write `watchdog/ping`                                               |
-| `lab-watchdog`   | read `watchdog/ping`, write `events/uptime/lab`, `events/uptime/watchdog` |
-| `web-ui`         | read `#` and `$SYS/#` (read-only view for the web UI)               |
+| User                   | Access                                                              |
+| ---------------------- | ------------------------------------------------------------------- |
+| `esp32-watchdog`       | write `watchdog/ping`                                               |
+| `lab-watchdog`         | read `watchdog/ping`, write `events/uptime/lab`, `events/uptime/watchdog` |
+| `web-ui`               | read `#` and `$SYS/#` (read-only view for the web UI)               |
+| `central-pipeline`     | read `#` (ingests every topic, writes nothing)                      |
+| `central-pipeline-sim` | write `events/uptime/lab`, `events/uptime/watchdog`                 |
 
-The first two serve [mutual-watchdog](https://github.com/OscarCarPu/mutual-watchdog).
+The first two serve [mutual-watchdog](https://github.com/OscarCarPu/mutual-watchdog),
+the last two [central-pipeline](https://github.com/OscarCarPu/central-pipeline) —
+`central-pipeline-sim` only exists to fake uptime events in development, so it is
+not created on the server.
 Note that `#` does not match `$SYS`, so broker stats need their own rule.
 
 ## Access
